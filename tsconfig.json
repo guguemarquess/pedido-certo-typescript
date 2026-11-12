@@ -1,20 +1,39 @@
 {
   "compilerOptions": {
-    // O mesmo rigor do Playground: liga todas as checagens importantes de uma vez.
+    // RIGOR
+    // Liga as checagens principais de uma vez (entre elas, proibir "any"
+    // implícito e obrigar a tratar null e undefined).
     "strict": true,
+    // Ler lista[i] ou objeto[chave] pode devolver undefined: o TS obriga a conferir.
+    "noUncheckedIndexedAccess": true,
+    // Todo caminho de uma função que devolve valor precisa ter um return.
+    "noImplicitReturns": true,
+    // Um "case" do switch não "escorre" para o próximo sem querer.
+    "noFallthroughCasesInSwitch": true,
+    // "Tipos.ts" e "tipos.ts" não são o mesmo arquivo. No Mac seriam, e o código
+    // quebraria só no servidor (Linux), que diferencia maiúsculas.
+    "forceConsistentCasingInFileNames": true,
 
+    // SAÍDA
     // Gera JavaScript moderno (ES2022), que o Node 20 entende.
     "target": "ES2022",
-    // "DOM" entra só por causa do console.log. Será revisto na etapa de ambiente.
-    "lib": ["ES2022", "DOM"],
-
+    // Sem "DOM": este projeto roda no Node, e não no navegador. Com o DOM, o TS
+    // aceitaria "document" e "window", que não existem aqui e quebrariam na execução.
+    "lib": ["ES2022"],
+    // Os tipos do Node (console, process...) vêm do pacote @types/node.
+    "types": ["node"],
     // Segue as regras de módulo do próprio Node.
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-
     // O código TypeScript fica em src/, e o JavaScript gerado vai para dist/.
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+
+    // DEPURAÇÃO
+    // Gera, para cada dist/arquivo.js, um mapa (dist/arquivo.js.map) que liga cada
+    // linha do JavaScript à linha original do TypeScript. Com ele, os erros apontam
+    // para o .ts que você escreveu, e não para o .js gerado.
+    "sourceMap": true
   },
   "include": ["src"]
 }

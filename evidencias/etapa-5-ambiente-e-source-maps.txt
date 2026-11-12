@@ -1,0 +1,55 @@
+ETAPA 5: ambiente, compilação e source maps
+============================================
+Versões: Node v20.20.2 · TypeScript 5.8.3 · @types/node 20.19.43
+
+1) O compilador gera dist/ a partir de src/ (npm run build)
+------------------------------------------------------------
+Para cada arquivo .ts, sai um .js (que o Node executa) e um .js.map (o mapa
+que liga o .js de volta ao .ts):
+   demo-source-map.js
+   demo-source-map.js.map
+   frete.js
+   frete.js.map
+   main.js
+   main.js.map
+   regras.js
+   regras.js.map
+   repositorio.js
+   repositorio.js.map
+   tipos.js
+   tipos.js.map
+   utilitarios.js
+   utilitarios.js.map
+   validacao.js
+   validacao.js.map
+
+2) Os tipos somem na compilação (transpilação)
+-----------------------------------------------
+O TypeScript (src/utilitarios.ts):
+   11:export function sucesso<T>(valor: T): Sucesso<T> {
+   12-  return { ok: true, valor };
+   13-}
+
+O JavaScript gerado (dist/utilitarios.js):
+   8:function sucesso(valor) {
+   9-    return { ok: true, valor };
+   10-}
+
+O "<T>", o ": T" e o ": Sucesso<T>" não existem no JavaScript: os tipos servem
+para conferir o código ANTES de rodar, e desaparecem depois.
+
+3) Source maps na prática (npm run demo:sem-source-map / demo:com-source-map)
+------------------------------------------------------------------------------
+Sem source map, o erro aponta para o JavaScript gerado:
+   Error: Lote incompleto: esperava pelo menos 2 pedidos
+       at conferirLote (./dist/demo-source-map.js:11:15)
+       at Object.<anonymous> (./dist/demo-source-map.js:15:5)
+
+Com source map (node --enable-source-maps), o MESMO erro aponta para o
+TypeScript, na linha que de fato foi escrita:
+   Error: Lote incompleto: esperava pelo menos 2 pedidos
+       at conferirLote (./src/demo-source-map.ts:12:11)
+       at Object.<anonymous> (./src/demo-source-map.ts:17:3)
+
+O "npm start" já roda com --enable-source-maps, então qualquer erro do
+programa principal também aponta para o .ts.

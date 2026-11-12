@@ -6,10 +6,17 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "tsc",
-    "start": "node dist/main.js",
-    "legado": "node legado/pedidos.js"
+    "prestart": "npm run build",
+    "start": "node --enable-source-maps dist/main.js",
+    "legado": "node legado/pedidos.js",
+    "demo:sem-source-map": "tsc && node dist/demo-source-map.js",
+    "demo:com-source-map": "tsc && node --enable-source-maps dist/demo-source-map.js"
   },
   "devDependencies": {
+    "@types/node": "20.19.43",
     "typescript": "5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

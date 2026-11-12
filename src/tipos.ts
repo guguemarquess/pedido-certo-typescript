@@ -6,6 +6,9 @@ import type { Regiao } from "./frete";
 // quem quiser todos os tipos do domínio num lugar só.
 export type { Regiao };
 
+// Decisão: união de literais + "as const" no lugar de enum. O enum gera código
+// JavaScript extra e não funciona quando o Node roda TypeScript direto (sem
+// compilar); a união some na compilação e já dá a mesma proteção.
 // "as const": a lista vira uma lista fixa de textos exatos. Dela saem o tipo
 // StatusPedido (usado pelo TypeScript) e a lista usada na validação (em execução).
 // Uma fonte de verdade só: as duas nunca ficam diferentes.

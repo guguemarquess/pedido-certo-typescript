@@ -148,8 +148,11 @@ export function descreverPagamento(pagamento: Pagamento | undefined): string {
   }
 }
 
+// Intl.NumberFormat (JavaScript moderno): formata no padrão brasileiro, "R$ 97,67".
+const formatoReais = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
 export function emReais(valor: number): string {
-  return "R$ " + Math.round(valor * 100) / 100;
+  return formatoReais.format(valor);
 }
 
 export function detalharItens(pedido: Pedido): ItemDetalhado[] {
@@ -163,9 +166,9 @@ export function listarItens(pedido: Pedido): string {
 }
 
 export function resumo(pedido: Pedido): string {
-  // O cliente pode ser null. O ternário estreita o tipo (narrowing): no "sim",
-  // o TypeScript sabe que o cliente existe.
-  const nomeDoCliente = pedido.cliente ? pedido.cliente.nome : "visitante";
+  // O cliente pode ser null (visitante). "?." só lê o nome se o cliente existir,
+  // e "??" usa "visitante" quando o resultado for null ou undefined.
+  const nomeDoCliente = pedido.cliente?.nome ?? "visitante";
   // Desestruturação da tupla: cada posição ganha um nome.
   const [subtotal, desconto, frete, total] = detalharTotal(pedido);
   return [
