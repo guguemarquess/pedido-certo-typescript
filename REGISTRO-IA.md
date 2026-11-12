@@ -55,3 +55,22 @@ Copie este bloco a cada novo uso:
 7) #2 · Bia · undefined x1 · total R$ 3012.5 · aguardando pagamento
 TypeError: Cannot read properties of null (reading 'nome')
 ```
+
+### Entrada 3 · 11/11 · Etapas 1 a 5 e documentação
+- **Ferramenta:** Claude (Anthropic, modelo Claude Opus 5.5), no Claude Code.
+- **O que eu pedi:** que a IA fizesse o restante do projeto, etapa por etapa, explicando cada decisão, e que só enviasse ao GitHub depois de eu validar o README.
+- **O que a IA fez:** a migração de `legado/pedidos.js` para `src/` em 5 commits. Em cada etapa, ela rodou o compilador **antes** de corrigir e guardou a saída em `evidencias/`:
+  - **Etapa 1:** o compilador achou os bugs A, B, C e E e mais um que não tinha sido plantado: `buscarPorId` podia devolver `undefined`, e o JavaScript nunca tratava esse caso.
+  - **Etapa 2:** os tipos novos (cupom e pagamento como uniões discriminadas, pedido `readonly`) obrigaram a refatorar 6 pontos do código.
+  - **Etapa 3:** trocar o `any` do `JSON.parse` por `unknown` revelou o bug D, que tinha passado calado pelas etapas 1 e 2.
+  - **Etapa 4:** a IA fez um experimento: acrescentou um status `"devolvido"` e mostrou que o compilador aponta os 3 lugares que ficariam desatualizados. Depois desfez.
+  - **Etapa 5:** source maps conferidos na prática (o erro aponta para `src/...ts` em vez de `dist/...js`).
+- **Pontos que eu mesmo corrigi na IA:** na v0, a IA colocou emojis no README e no código, e um título que eu não tinha validado. Pedi para tirar tudo, porque emoji deixa o texto com cara de gerado por IA. Também conferi o nome do sistema e do repositório antes de publicar.
+- **Avaliação crítica:** **[A PREENCHER: escolha 2 ou 3 decisões abaixo e diga se concorda, discorda ou mudaria, e por quê]**
+  - Aceitar número em forma de texto vindo da API (`"12.5"`), convertendo com `Number()`, em vez de recusar.
+  - Gravar o frete no pedido (cotação) em vez de recalcular sempre.
+  - Trocar o `throw` por `Resultado<T>` na etapa 4: o código ficou mais seguro, mas o `main.ts` precisou de uma função auxiliar (`exigir`).
+  - Não usar `enum` nem tipos condicionais, e justificar a escolha.
+  - O `PorStatus` e o `garantirExaustividade` valem a complexidade extra para um módulo pequeno?
+- **O que eu mudei e por quê:** **[A PREENCHER: o que você mudou no código ou no README depois de revisar, ou por que aceitou como estava]**
+- **Evidência:** os commits `etapa 1` a `etapa 5` e `docs: README e registro de IA`, e os arquivos em `evidencias/`.
