@@ -1,0 +1,25 @@
+ETAPA 4: a exaustividade em ação
+=================================
+Comando: npx tsc --noEmit
+Experimento: acrescentar um status novo, "devolvido", na lista STATUS_PEDIDO
+(src/tipos.ts) SEM mexer em mais nada. É o que acontece na vida real quando
+o negócio cria um status novo e alguém esquece de atualizar o resto do código.
+
+src/regras.ts(73,7): error TS2741: Property 'devolvido' is missing in type '{ pendente: ("pago" | "cancelado")[]; pago: ("enviado" | "cancelado")[]; enviado: "entregue"[]; entregue: never[]; cancelado: never[]; }' but required in type 'PorStatus<readonly ("pendente" | "pago" | "enviado" | "entregue" | "cancelado" | "devolvido")[]>'.
+src/regras.ts(113,9): error TS2741: Property 'devolvido' is missing in type '{ pendente: number; pago: number; enviado: number; entregue: number; cancelado: number; }' but required in type 'PorStatus<number>'.
+src/regras.ts(133,36): error TS2345: Argument of type '"devolvido"' is not assignable to parameter of type 'never'.
+
+Como ler
+--------
+O TypeScript apontou, sozinho, os 3 lugares que precisariam ser atualizados:
+- regras.ts PROXIMOS_STATUS (TS2741): a tabela da máquina de status não diz
+  para onde um pedido "devolvido" pode ir. Vem do mapped type PorStatus.
+- regras.ts contarPorStatus (TS2741): o painel não conta os "devolvidos".
+  Também vem do PorStatus.
+- regras.ts rotuloStatus (TS2345): o switch não tem o caso "devolvido", e o
+  valor que sobra não é "never". Vem do garantirExaustividade.
+
+Sem essas proteções, o código compilaria e o rótulo do status sairia vazio,
+o painel ignoraria os devolvidos, e um pedido devolvido ficaria "travado".
+
+O experimento foi desfeito depois do teste: "devolvido" não faz parte do projeto.

@@ -14,6 +14,11 @@ export const STATUS_PEDIDO = ["pendente", "pago", "enviado", "entregue", "cancel
 // União de literais: "pendente" | "pago" | "enviado" | "entregue" | "cancelado".
 export type StatusPedido = (typeof STATUS_PEDIDO)[number];
 
+// Mapped type genérico: um objeto com UMA chave para CADA status, todas com o
+// mesmo tipo de valor. Ex.: PorStatus<number> = { pendente: number; pago: number; ... }.
+// Se um status novo entrar em STATUS_PEDIDO, todo objeto PorStatus passa a exigir essa chave.
+export type PorStatus<Valor> = { [Status in StatusPedido]: Valor };
+
 export interface Cliente {
   readonly id: number;
   nome: string;

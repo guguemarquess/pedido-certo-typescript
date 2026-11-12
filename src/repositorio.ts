@@ -1,29 +1,35 @@
-import type { Pedido } from "./tipos";
-
-// O contrato: qualquer forma de guardar pedidos (memória, banco, API) precisa
-// oferecer estas três operações. Quem usa depende do contrato, não da classe.
-export interface ArmazenamentoDePedidos {
-  salvar(pedido: Pedido): void;
-  buscarPorId(id: number): Pedido | undefined;
-  listar(): readonly Pedido[];
+// O contrato: qualquer forma de guardar itens (memória, banco, API) precisa
+// oferecer estas operações. Quem usa depende do contrato, não da classe.
+export interface Armazenamento<T> {
+  salvar(item: T): void;
+  buscarPorId(id: number): T | undefined;
+  listar(): readonly T[];
 }
 
-// "implements": a classe promete cumprir o contrato. Se faltar um método, o TS reclama.
-export class RepositorioDePedidos implements ArmazenamentoDePedidos {
+// Classe genérica com restrição: T pode ser qualquer tipo, DESDE QUE tenha um id
+// numérico. É a restrição ("extends { readonly id: number }") que permite usar
+// item.id aqui dentro. Na etapa 2, a classe servia só para pedidos; agora a
+// mesma classe guarda pedidos, clientes ou o que tiver id.
+export class Repositorio<T extends { readonly id: number }> implements Armazenamento<T> {
   // private: ninguém de fora mexe na coleção diretamente, só pelos métodos.
   // Map guarda por id: salvar de novo o mesmo id substitui a versão antiga.
   // Decisão: não usei "protected" porque nenhuma classe herda desta.
-  private readonly pedidos = new Map<number, Pedido>();
+  private readonly itens = new Map<number, T>();
 
-  salvar(pedido: Pedido): void {
-    this.pedidos.set(pedido.id, pedido);
+  salvar(item: T): void {
+    this.itens.set(item.id, item);
   }
 
-  buscarPorId(id: number): Pedido | undefined {
-    return this.pedidos.get(id);
+  buscarPorId(id: number): T | undefined {
+    return this.itens.get(id);
   }
 
-  listar(): readonly Pedido[] {
-    return [...this.pedidos.values()];
+  listar(): readonly T[] {
+    return [...this.itens.values()];
+  }
+
+  // get: lido como propriedade (repositorio.quantidade), mas calculado na hora.
+  get quantidade(): number {
+    return this.itens.size;
   }
 }

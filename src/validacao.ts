@@ -1,11 +1,9 @@
 import { ehRegiao } from "./frete";
 import { STATUS_PEDIDO, type Cliente, type ItemPedido, type Pedido, type StatusPedido } from "./tipos";
+import { falha, sucesso, type Resultado } from "./utilitarios";
 
 // Decisão: os dados de fora são "unknown" até serem conferidos campo a campo.
 // Não uso "any" (desligaria a checagem) nem "as Pedido" (fingiria que está tudo certo).
-
-// O resultado diz se deu certo (e entrega o pedido) ou se deu errado (e lista os erros).
-export type RespostaDaValidacao = { ok: true; pedido: Pedido } | { ok: false; erros: string[] };
 
 function ehObjeto(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === "object" && valor !== null && !Array.isArray(valor);
@@ -71,8 +69,10 @@ function lerItens(valor: unknown, erros: string[]): ItemPedido[] {
   });
 }
 
-export function validarPedido(dado: unknown): RespostaDaValidacao {
-  if (!ehObjeto(dado)) return { ok: false, erros: ["pedido: esperava um objeto"] };
+// Devolve Resultado<Pedido>: o mesmo "deu certo / deu errado" usado nas regras.
+// (Na etapa 3, havia um tipo só para isto, RespostaDaValidacao. O generic acabou com a duplicação.)
+export function validarPedido(dado: unknown): Resultado<Pedido> {
+  if (!ehObjeto(dado)) return falha("pedido: esperava um objeto");
 
   // Junta TODOS os problemas antes de responder, em vez de parar no primeiro:
   // quem integra a API corrige tudo de uma vez.
@@ -93,20 +93,20 @@ export function validarPedido(dado: unknown): RespostaDaValidacao {
     erros.push(`status: pedidos da API entram como "pendente", recebi "${status}"`);
   }
 
-  if (erros.length > 0 || regiao === undefined || status === undefined) return { ok: false, erros };
+  if (erros.length > 0 || regiao === undefined || status === undefined) return falha(...erros);
   // Decisão: pedidos da API entram sem cupom e sem pagamento. Esses campos só
   // são aplicados aqui dentro, pelas regras de negócio.
-  return { ok: true, pedido: { id, cliente, itens, regiao, frete, status } };
+  return sucesso({ id, cliente, itens, regiao, frete, status });
 }
 
-export function lerPedidoDaApi(json: string): RespostaDaValidacao {
+export function lerPedidoDaApi(json: string): Resultado<Pedido> {
   // O JSON.parse devolve "any". Guardar em uma variável unknown "desarma" o any
   // logo na entrada: daqui para a frente, nada é usado sem conferência.
   let dado: unknown;
   try {
     dado = JSON.parse(json);
   } catch {
-    return { ok: false, erros: ["o texto recebido não é um JSON válido"] };
+    return falha("o texto recebido não é um JSON válido");
   }
   return validarPedido(dado);
 }

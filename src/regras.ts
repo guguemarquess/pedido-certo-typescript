@@ -6,10 +6,12 @@ import type {
   ItemPedido,
   Pagamento,
   Pedido,
+  PorStatus,
   Regiao,
   RegraDeDesconto,
   StatusPedido,
 } from "./tipos";
+import { falha, garantirExaustividade, sucesso, type Resultado } from "./utilitarios";
 
 function somarItens(itens: readonly ItemPedido[]): number {
   return itens.reduce((soma, item) => soma + item.precoUnitario * item.quantidade, 0);
@@ -30,10 +32,10 @@ export function criarPedido(
 // Rest (...novosItens): recebe quantos itens vierem, já reunidos numa lista.
 // Spread ([...a, ...b] e {...pedido}): monta uma lista e um pedido novos, sem alterar os originais.
 // O frete é cotado de novo, porque o subtotal mudou (pode virar frete grátis).
-export function adicionarItens(pedido: Pedido, ...novosItens: ItemPedido[]): Pedido {
-  if (pedido.status !== "pendente") throw new Error("Só é possível adicionar itens a um pedido pendente");
+export function adicionarItens(pedido: Pedido, ...novosItens: ItemPedido[]): Resultado<Pedido> {
+  if (pedido.status !== "pendente") return falha("Só é possível adicionar itens a um pedido pendente");
   const itens = [...pedido.itens, ...novosItens];
-  return { ...pedido, itens, frete: Frete.calcular(pedido.regiao, somarItens(itens)) };
+  return sucesso({ ...pedido, itens, frete: Frete.calcular(pedido.regiao, somarItens(itens)) });
 }
 
 // Regra 2: total = itens - desconto + frete, e nunca fica negativo.
@@ -47,6 +49,8 @@ export function regraDoCupom(cupom: Cupom | undefined): RegraDeDesconto {
     case "valorFixo":
       // O desconto nunca passa do subtotal: um cupom de R$ 50 num pedido de R$ 30 desconta R$ 30.
       return (subtotal) => Math.min(cupom.valor, subtotal);
+    default:
+      return garantirExaustividade(cupom);
   }
 }
 
@@ -63,28 +67,52 @@ export function calcularTotal(pedido: Pedido): number {
 }
 
 // Regra 3: pendente -> pago -> enviado -> entregue. Cancelar só antes de "enviado".
-// As funções não alteram o pedido recebido: devolvem um pedido NOVO (spread),
-// e lançam um erro quando a mudança de status não é permitida.
-export function pagar(pedido: Pedido, pagamento: Pagamento): Pedido {
-  if (pedido.status !== "pendente") throw new Error("Só é possível pagar um pedido pendente");
-  return { ...pedido, pagamento, status: "pago" };
-}
+// A máquina de status virou uma tabela. O tipo PorStatus obriga a tabela a ter
+// uma linha para cada status: um status novo sem linha não compila.
+// (Na etapa 2, a mesma regra estava espalhada em quatro "if" diferentes.)
+const PROXIMOS_STATUS: PorStatus<readonly StatusPedido[]> = {
+  pendente: ["pago", "cancelado"],
+  pago: ["enviado", "cancelado"],
+  enviado: ["entregue"],
+  entregue: [],
+  cancelado: [],
+};
 
-export function enviar(pedido: Pedido): Pedido {
-  if (pedido.status !== "pago") throw new Error("Só é possível enviar um pedido pago");
-  return { ...pedido, status: "enviado" };
-}
-
-export function entregar(pedido: Pedido): Pedido {
-  if (pedido.status !== "enviado") throw new Error("Só é possível entregar um pedido enviado");
-  return { ...pedido, status: "entregue" };
-}
-
-export function cancelar(pedido: Pedido): Pedido {
-  if (pedido.status === "enviado" || pedido.status === "entregue") {
-    throw new Error("Não é possível cancelar um pedido que já saiu para entrega");
+// Não é exportada: de fora, só dá para mudar o status pelas funções abaixo.
+// Assim ninguém marca um pedido como "pago" sem informar o pagamento.
+function mudarStatus(pedido: Pedido, novoStatus: StatusPedido): Resultado<Pedido> {
+  if (!PROXIMOS_STATUS[pedido.status].includes(novoStatus)) {
+    return falha(`Um pedido "${rotuloStatus(pedido.status)}" não pode passar para "${rotuloStatus(novoStatus)}"`);
   }
-  return { ...pedido, status: "cancelado" };
+  return sucesso({ ...pedido, status: novoStatus });
+}
+
+// Decisão: as mudanças de status devolvem Resultado<Pedido> em vez de lançar
+// erro (como na etapa 2). O "throw" não aparece no tipo, e quem chamava podia
+// esquecer o try/catch. Com Resultado, o TypeScript obriga a tratar a falha.
+export function pagar(pedido: Pedido, pagamento: Pagamento): Resultado<Pedido> {
+  const resultado = mudarStatus(pedido, "pago");
+  return resultado.ok ? sucesso({ ...resultado.valor, pagamento }) : resultado;
+}
+
+export function enviar(pedido: Pedido): Resultado<Pedido> {
+  return mudarStatus(pedido, "enviado");
+}
+
+export function entregar(pedido: Pedido): Resultado<Pedido> {
+  return mudarStatus(pedido, "entregue");
+}
+
+export function cancelar(pedido: Pedido): Resultado<Pedido> {
+  return mudarStatus(pedido, "cancelado");
+}
+
+// Painel: quantos pedidos há em cada status. O PorStatus<number> obriga a
+// começar a contagem com TODOS os status, mesmo os que estão com zero.
+export function contarPorStatus(pedidos: readonly Pedido[]): PorStatus<number> {
+  const contagem: PorStatus<number> = { pendente: 0, pago: 0, enviado: 0, entregue: 0, cancelado: 0 };
+  for (const pedido of pedidos) contagem[pedido.status] += 1;
+  return contagem;
 }
 
 // Textos para o console
@@ -101,6 +129,8 @@ export function rotuloStatus(status: StatusPedido): string {
       return "entregue";
     case "cancelado":
       return "cancelado";
+    default:
+      return garantirExaustividade(status);
   }
 }
 
@@ -113,6 +143,8 @@ export function descreverPagamento(pagamento: Pagamento | undefined): string {
       return `cartão final ${pagamento.final} em ${pagamento.parcelas}x`;
     case "boleto":
       return `boleto com vencimento em ${pagamento.vencimento}`;
+    default:
+      return garantirExaustividade(pagamento);
   }
 }
 
