@@ -1,0 +1,27 @@
+ETAPA 1: o que o TypeScript encontrou ao traduzir legado/pedidos.js
+====================================================================
+Comando: npx tsc --noEmit
+Situação: tradução direta do JavaScript para TypeScript, com tipos, mas
+com os bugs ainda no código. Nenhuma linha foi executada: o TypeScript
+achou tudo só lendo o código.
+
+src/main.ts(18,26): error TS2345: Argument of type 'Pedido | undefined' is not assignable to parameter of type 'Pedido'.
+  Type 'undefined' is not assignable to type 'Pedido'.
+src/regras.ts(33,3): error TS2820: Type '"Pago"' is not assignable to type 'StatusPedido'. Did you mean '"pago"'?
+src/regras.ts(57,53): error TS2366: Function lacks ending return statement and return type does not include 'undefined'.
+src/regras.ts(76,42): error TS2339: Property 'nome' does not exist on type 'ItemPedido'.
+src/regras.ts(80,36): error TS18047: 'pedido.cliente' is possibly 'null'.
+
+Como ler cada erro
+------------------
+- regras.ts(33,3)  TS2820  BUG A: o status "Pago" não existe na lista (o TS até sugere "pago").
+- regras.ts(57,53) TS2366  BUG C: o switch não cobre "cancelado", então a função pode não devolver texto.
+- regras.ts(76,42) TS2339  BUG B: ItemPedido não tem o campo "nome" (o campo é "produto").
+- regras.ts(80,36) TS18047 BUG E: o cliente pode ser null (pedido de visitante).
+- main.ts(18,26)   TS2345  BÔNUS: buscarPorId pode não achar o pedido (undefined).
+                           Esse bug não foi plantado: o JavaScript escondia.
+
+O que NÃO apareceu
+------------------
+- BUG D (frete "12.5" vindo da API): o JSON.parse devolve "any", e o any
+  desliga a checagem. Corrigido na etapa 3, com unknown e validação.

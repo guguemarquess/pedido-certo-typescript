@@ -1,0 +1,15 @@
+{
+  "name": "pedido-certo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de pedidos em TypeScript: modelagem de dados e regras de negócio pelo sistema de tipos.",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "legado": "node legado/pedidos.js"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

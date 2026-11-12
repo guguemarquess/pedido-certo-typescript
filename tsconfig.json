@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    // O mesmo rigor do Playground: liga todas as checagens importantes de uma vez.
+    "strict": true,
+
+    // Gera JavaScript moderno (ES2022), que o Node 20 entende.
+    "target": "ES2022",
+    // "DOM" entra só por causa do console.log. Será revisto na etapa de ambiente.
+    "lib": ["ES2022", "DOM"],
+
+    // Segue as regras de módulo do próprio Node.
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    // O código TypeScript fica em src/, e o JavaScript gerado vai para dist/.
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}
