@@ -1,0 +1,31 @@
+ETAPA 2: o que os tipos novos obrigaram a refatorar
+====================================================
+Comando: npx tsc --noEmit
+Situação: tipos.ts já com os contratos da etapa 2 (cupom e pagamento como
+uniões discriminadas, Pedido com todos os campos readonly), mas regras.ts e
+main.ts ainda no formato da etapa 1.
+
+src/main.ts(7,107): error TS2345: Argument of type '{ codigo: string; percentual: number; }' is not assignable to parameter of type 'Cupom | undefined'.
+  Property 'tipo' is missing in type '{ codigo: string; percentual: number; }' but required in type '{ tipo: "percentual"; codigo: string; percentual: number; }'.
+src/regras.ts(33,60): error TS2339: Property 'percentual' does not exist on type 'Cupom'.
+  Property 'percentual' does not exist on type '{ tipo: "valorFixo"; codigo: string; valor: number; }'.
+src/regras.ts(41,10): error TS2540: Cannot assign to 'status' because it is a read-only property.
+src/regras.ts(47,10): error TS2540: Cannot assign to 'status' because it is a read-only property.
+src/regras.ts(53,10): error TS2540: Cannot assign to 'status' because it is a read-only property.
+src/regras.ts(61,10): error TS2540: Cannot assign to 'status' because it is a read-only property.
+
+Como ler cada erro
+------------------
+- regras.ts(33,60) TS2339  o cupom agora pode ser de valor fixo, que não tem
+                           "percentual". O TS obriga a tratar os dois formatos
+                           (resolvido com um switch no campo "tipo").
+- regras.ts(41..61) TS2540 o status é readonly. As funções pagar, enviar,
+                           entregar e cancelar alteravam o pedido no lugar.
+                           Agora devolvem um pedido novo, com spread.
+- main.ts(7,107)   TS2345  o cupom criado no main não dizia o seu "tipo".
+
+Por que isso é bom
+------------------
+Nenhum desses pontos quebraria o JavaScript na hora, mas todos virariam bugs
+depois: um cupom de valor fixo daria desconto NaN, e um pedido alterado "pelas
+costas" mudaria em todos os lugares onde foi guardado.

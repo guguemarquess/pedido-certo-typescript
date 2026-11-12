@@ -1,12 +1,29 @@
 import type { Pedido } from "./tipos";
 
-const pedidosSalvos: Pedido[] = [];
-
-export function salvar(pedido: Pedido): void {
-  pedidosSalvos.push(pedido);
+// O contrato: qualquer forma de guardar pedidos (memória, banco, API) precisa
+// oferecer estas três operações. Quem usa depende do contrato, não da classe.
+export interface ArmazenamentoDePedidos {
+  salvar(pedido: Pedido): void;
+  buscarPorId(id: number): Pedido | undefined;
+  listar(): readonly Pedido[];
 }
 
-// O retorno avisa que a busca pode não achar nada: Pedido | undefined.
-export function buscarPorId(id: number): Pedido | undefined {
-  return pedidosSalvos.find((pedido) => pedido.id === id);
+// "implements": a classe promete cumprir o contrato. Se faltar um método, o TS reclama.
+export class RepositorioDePedidos implements ArmazenamentoDePedidos {
+  // private: ninguém de fora mexe na coleção diretamente, só pelos métodos.
+  // Map guarda por id: salvar de novo o mesmo id substitui a versão antiga.
+  // Decisão: não usei "protected" porque nenhuma classe herda desta.
+  private readonly pedidos = new Map<number, Pedido>();
+
+  salvar(pedido: Pedido): void {
+    this.pedidos.set(pedido.id, pedido);
+  }
+
+  buscarPorId(id: number): Pedido | undefined {
+    return this.pedidos.get(id);
+  }
+
+  listar(): readonly Pedido[] {
+    return [...this.pedidos.values()];
+  }
 }
