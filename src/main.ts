@@ -50,12 +50,29 @@ const pedidoDeVisitante = pagar(
 repositorio.salvar(pedidoDeVisitante);
 console.log(resumo(pedidoDeVisitante));
 
-console.log("\n== 5. Pedido vindo da API (o BUG D ainda passa: corrigido na etapa 3) ==");
-const pedidoDaApi = lerPedidoDaApi(
+console.log("\n== 5. Pedidos vindos da API: só entram depois de conferidos ==");
+
+function importarDaApi(json: string): void {
+  const resposta = lerPedidoDaApi(json);
+  // União discriminada pelo campo "ok": no if, o TS sabe que existe "pedido";
+  // no else, sabe que existe "erros".
+  if (resposta.ok) {
+    repositorio.salvar(resposta.pedido);
+    console.log(resumo(resposta.pedido));
+  } else {
+    console.log("Recusado:");
+    for (const erro of resposta.erros) console.log(`   - ${erro}`);
+  }
+}
+
+// O pedido do antigo BUG D: o frete chega como texto ("12.5") e agora é convertido.
+importarDaApi(
   '{"id":2,"cliente":{"id":2,"nome":"Bia","email":"bia@email.com"},"itens":[{"produto":"Caneca","precoUnitario":30,"quantidade":1}],"regiao":"sudeste","frete":"12.5","status":"pendente"}',
 );
-repositorio.salvar(pedidoDaApi);
-console.log(resumo(pedidoDaApi));
+// Um pedido com vários problemas: todos aparecem de uma vez.
+importarDaApi(
+  '{"id":5,"cliente":{"id":5,"nome":"Duda"},"itens":[{"produto":"Caneca","precoUnitario":30,"quantidade":"dois"}],"regiao":"centro-oeste","frete":12.5,"status":"Pago"}',
+);
 
 console.log("\n== 6. Repositório ==");
 console.log(`Pedidos salvos: ${repositorio.listar().length}`);

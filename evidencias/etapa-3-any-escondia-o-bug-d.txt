@@ -1,0 +1,26 @@
+ETAPA 3: o any escondia o BUG D; o unknown mostra
+==================================================
+Comando: npx tsc --noEmit
+
+Antes (etapas 1 e 2): lerPedidoDaApi devolvia JSON.parse(json), que é "any".
+O any desliga a checagem, e o pedido com frete "12.5" (texto) passava como
+se fosse um Pedido. Resultado em execução: total R$ 3012.5 em vez de R$ 42,50.
+O tsc não acusava NADA.
+
+Passo intermediário: o retorno virou "unknown" (o tipo honesto de "não sei o
+que chegou"). Saída do tsc:
+
+src/main.ts(57,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Pedido'.
+src/main.ts(58,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Pedido'.
+
+Como ler
+--------
+- main.ts(57,20) e (58,20) TS2345: um valor unknown não pode ser usado como
+  Pedido sem antes ser conferido. O TypeScript passou a exigir a validação.
+
+Correção
+--------
+src/validacao.ts confere cada campo (typeof, Array.isArray, listas de valores
+válidos) e devolve ou um Pedido de verdade ou a lista de erros encontrados.
+O frete "12.5" é convertido com Number() e conferido (número finito, >= 0).
+Um "as Pedido" teria feito o erro sumir, mas o bug continuaria lá.

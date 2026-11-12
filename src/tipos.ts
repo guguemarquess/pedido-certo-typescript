@@ -1,9 +1,18 @@
 // Os moldes do domínio: o formato de cada informação de um pedido.
 
-// União de literais: o status só pode ser um destes textos, como as opções de um dropdown.
-export type StatusPedido = "pendente" | "pago" | "enviado" | "entregue" | "cancelado";
+import type { Regiao } from "./frete";
 
-export type Regiao = "sul" | "sudeste" | "centroOeste" | "norte" | "nordeste";
+// A região vem da tabela de frete (keyof typeof). É reexportada aqui para
+// quem quiser todos os tipos do domínio num lugar só.
+export type { Regiao };
+
+// "as const": a lista vira uma lista fixa de textos exatos. Dela saem o tipo
+// StatusPedido (usado pelo TypeScript) e a lista usada na validação (em execução).
+// Uma fonte de verdade só: as duas nunca ficam diferentes.
+export const STATUS_PEDIDO = ["pendente", "pago", "enviado", "entregue", "cancelado"] as const;
+
+// União de literais: "pendente" | "pago" | "enviado" | "entregue" | "cancelado".
+export type StatusPedido = (typeof STATUS_PEDIDO)[number];
 
 export interface Cliente {
   readonly id: number;
